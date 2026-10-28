@@ -8,8 +8,8 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <Description>ASP.NET Core integration for CrCore.Exceptions.</Description>
     <PackageTags>exceptions;aspnetcore;webapi;problem-details;rfc7807;middleware;exception-handler</PackageTags>
+    <Description>ASP.NET Core integration part containing exception handler middleware, status code and log level mappings.</Description>
   </PropertyGroup>
 
   <ItemGroup>
