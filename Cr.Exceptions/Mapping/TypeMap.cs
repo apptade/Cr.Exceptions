@@ -4,7 +4,7 @@ namespace Cr.Exceptions;
 
 public abstract class TypeMap<TValue> : Map<Type, TValue>
 {
-    protected TypeMap(FrozenDictionary<Type, TValue> dictionary) : base(dictionary) { }
+    protected TypeMap(FrozenDictionary<Type, TValue> frozenDictionary) : base(frozenDictionary) { }
 
     protected TValue GetByHierarchy(Type? type)
         => TryGetByHierarchy(type, out var value) ? value : throw CreateKeyNotFoundException(type);
