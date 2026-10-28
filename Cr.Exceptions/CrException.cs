@@ -2,8 +2,6 @@
 
 public class CrException : Exception
 {
-    public ImmutableArray<CrError> Errors { get; }
-
     public CrException(string? message = null, Exception? innerException = null) : base(message, innerException)
     {
         Errors = [];
@@ -16,4 +14,6 @@ public class CrException : Exception
 
         Errors = errors;
     }
+
+    public ImmutableArray<CrError> Errors { get; }
 }
