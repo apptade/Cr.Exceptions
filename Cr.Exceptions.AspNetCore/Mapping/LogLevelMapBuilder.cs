@@ -4,10 +4,11 @@ namespace Cr.Exceptions.AspNetCore;
 
 public class LogLevelMapBuilder : MapBuilder<Type, LogLevel>
 {
-    public LogLevelMapBuilder Map<TException>(LogLevel level) where TException : CrException
+    public LogLevelMapBuilder Map<TException>(LogLevel logLevel) where TException : CrException
     {
-        ThrowIfInvalidLevel(level);
-        AddPair(typeof(TException), level);
+        ThrowIfInvalidLogLevel(logLevel);
+
+        AddPair(typeof(TException), logLevel);
 
         return this;
     }
@@ -15,18 +16,16 @@ public class LogLevelMapBuilder : MapBuilder<Type, LogLevel>
     public LogLevelMap Build()
         => new(BuildFrozenDictionary());
 
-    private static void ThrowIfInvalidLevel(LogLevel level)
+    private static void ThrowIfInvalidLogLevel(LogLevel logLevel)
     {
-        if (!Enum.IsDefined(level))
+        if (!Enum.IsDefined(logLevel))
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(level), level, $"The value '{level}' is not a valid {nameof(LogLevel)}.");
+            throw new ArgumentOutOfRangeException(nameof(logLevel), logLevel, $"The value '{logLevel}' is not a valid {nameof(LogLevel)}.");
         }
 
-        if (level is LogLevel.None)
+        if (logLevel is LogLevel.None)
         {
-            throw new ArgumentException(
-                $"{nameof(LogLevel)}.{nameof(LogLevel.None)} cannot be used for exception mapping.", nameof(level));
+            throw new ArgumentException($"{nameof(LogLevel)}.{nameof(LogLevel.None)} cannot be used for exception mapping.", nameof(logLevel));
         }
     }
 }
