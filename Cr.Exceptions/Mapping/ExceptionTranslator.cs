@@ -4,7 +4,7 @@ namespace Cr.Exceptions;
 
 public class ExceptionTranslator : TypeMap<Func<Exception, CrException>>
 {
-    internal ExceptionTranslator(FrozenDictionary<Type, Func<Exception, CrException>> dictionary) : base(dictionary) { }
+    internal ExceptionTranslator(FrozenDictionary<Type, Func<Exception, CrException>> frozenDictionary) : base(frozenDictionary) { }
 
     public CrException Translate(Exception exception)
         => ExecuteTranslator(exception, GetByHierarchy(exception.GetType()));
@@ -14,6 +14,6 @@ public class ExceptionTranslator : TypeMap<Func<Exception, CrException>>
 
     private static CrException ExecuteTranslator(Exception innerException, Func<Exception, CrException> translator)
     {
-        return translator(innerException) ?? throw new InvalidOperationException($"{nameof(translator)} returned null.");
+        return translator(innerException) ?? throw new InvalidOperationException($"The exception translator '{translator.Method}' returned null.");
     }
 }
