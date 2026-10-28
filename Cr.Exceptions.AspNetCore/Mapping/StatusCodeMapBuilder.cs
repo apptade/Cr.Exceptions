@@ -4,10 +4,11 @@ namespace Cr.Exceptions.AspNetCore;
 
 public class StatusCodeMapBuilder : MapBuilder<Type, int>
 {
-    public StatusCodeMapBuilder Map<TException>(int code) where TException : CrException
+    public StatusCodeMapBuilder Map<TException>(int statusCode) where TException : CrException
     {
-        ThrowIfInvalidCode(code);
-        AddPair(typeof(TException), code);
+        ThrowIfInvalidStatusCode(statusCode);
+
+        AddPair(typeof(TException), statusCode);
 
         return this;
     }
@@ -15,12 +16,11 @@ public class StatusCodeMapBuilder : MapBuilder<Type, int>
     public StatusCodeMap Build()
         => new(BuildFrozenDictionary());
 
-    private static void ThrowIfInvalidCode(int code)
+    private static void ThrowIfInvalidStatusCode(int statusCode)
     {
-        if (!Enum.IsDefined(typeof(HttpStatusCode), code))
+        if (!Enum.IsDefined((HttpStatusCode)statusCode))
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(code), $"'{code}' is not a standard HTTP status code.");
+            throw new ArgumentOutOfRangeException(nameof(statusCode), $"'{statusCode}' is not a standard HTTP status code.");
         }
     }
 }
