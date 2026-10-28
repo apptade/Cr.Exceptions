@@ -1,109 +1,72 @@
 # Intro
 
-ASP.NET Core integration for **CrCore.Exceptions**.
-
-This package provides automatic handling of `CrException` instances, converts them into RFC 7807 `ProblemDetails` responses, and supports configurable exception-to-HTTP status code and log level mappings.
-
-## Features
-
-- ASP.NET Core exception handler
-- RFC 7807 `ProblemDetails` responses
-- Configurable exception → HTTP status code mapping
-- Configurable exception → log level mapping
-- Generic handling of unexpected exceptions
+ASP.NET Core integration for `Cr.Exceptions` to automatically map exceptions into RFC-compliant Problem Details with customizable HTTP status codes and log levels.
 
 ---
 
-# Installation
+## Installation
+
+### Default
 
 ```csharp
-builder.Services.AddCrExceptionsCore();
+builder.Services.AddCrExceptionHandling();
+app.UseExceptionHandler();
+```
+
+### Custom
+
+```csharp
+builder.Services
+    .AddCrExceptionHandler()
+    .AddCrStatusCodeMapping(builder =>
+    {
+        // Configure
+    })
+    .AddCrLogLevelMapping(builder =>
+    {
+        // Configure
+    });
 
 app.UseExceptionHandler();
 ```
 
----
+## Exception Handling
 
-# Default HTTP Status Code Mapping
+### Flow
 
-| Exception | HTTP Status |
-|-----------|------------:|
-| `ValidationException` | 400 |
-| `UnauthorizedException` | 401 |
-| `ForbiddenException` | 403 |
-| `NotFoundException` | 404 |
-| `ConflictException` | 409 |
-| `UnprocessableException` | 422 |
-| `InternalException` | 500 |
-
-# Custom HTTP Status Code Mapping
+When a `CrException` is thrown:
 
 ```csharp
-builder.Services.AddCrStatusCodeMapping(builder =>
+public sealed class KeycloakInvalidGrantException : ValidationException
 {
-    builder.AddDefaultMappings();
+    private static readonly ImmutableArray<CrError> _errors
+        = [new("IdentityInvalidGrant", "The authorization grant is invalid.")];
 
-    builder.Map<MyCustomException>(StatusCodes.Status499ClientClosedRequest);
-});
-```
-
----
-
-# Default Log Level Mapping
-
-| Exception | Log Level |
-|-----------|------------:|
-| `ValidationException` | Debug |
-| `UnauthorizedException` | Debug |
-| `ForbiddenException` | Debug |
-| `NotFoundException` | Debug |
-| `ConflictException` | Debug |
-| `UnprocessableException` | Debug |
-| `InternalException` | Error |
-
-# Custom Log Level Mapping
-
-```csharp
-builder.Services.AddCrLogLevelMapping(builder =>
-{
-    builder.AddDefaultMappings();
-
-    builder.Map<MyCustomException>(LogLevel.Warning);
-});
-```
-
----
-
-# ProblemDetails Response
-
-`CrException` instances are automatically converted into RFC 7807 `ProblemDetails`.
-
-Example:
-
-```json
-{
-  "type": "https://tools.ietf.org/html/rfc9110#section-15.5.5",
-  "title": "Not Found",
-  "status": 404,
-  "errors": [
-    {
-      "code": "TestNotFoundCode",
-      "message": "Test not found message"
-    }
-  ],
-  "traceId": "c771b28502648371f14885924e6d1767"
+    public KeycloakInvalidGrantException() : base(_errors) { }
 }
 ```
 
-Clients should use `errors[].code` as the stable application error identifier.
+The client receives a next response:
 
----
+```json
+{
+    "type": "https://tools.ietf.org/html/rfc9110#section-15.5.1",
+    "title": "Bad Request",
+    "status": 400,
+    "errors": [
+        {
+            "code": "IdentityInvalidGrant",
+            "message": "The authorization grant is invalid."
+        }
+    ],
+    "traceId": "6dd0bbb69ae26c77dd09d915915b1958"
+}
+```
 
-# Unexpected Exceptions
+> [!NOTE]
+> `traceId` populates from `Activity.Current?.TraceId` with a fallback to `HttpContext.TraceIdentifier`.
 
-Exceptions that do not inherit from `CrException` are converted into a generic internal server error response.
-
-Example:
+If an exception is not derived from `CrException`, or for any unknown exception, the handler returns the following fallback response:
 
 ```json
 {
@@ -116,6 +79,54 @@ Example:
       "message": "An unexpected internal error occurred."
     }
   ],
-  "traceId": "9bf8d72774b6f2d97cac7607bb19f408"
+  "traceId": "ff3e0d35e6f0fa022a6de34583ea9e81"
 }
 ```
+
+### Logging
+
+The handler emits structured logs for exceptions and handling events. See [Log Event IDs](CrExceptionHandlerLogExtensions.cs).
+
+---
+
+## HTTP Status Code Mapping
+
+You can customize how `CrException` types map to HTTP status codes.
+
+> [!NOTE]
+> The mapping process traverses the exception type hierarchy.
+
+### Registration
+
+```csharp
+builder.Services.AddCrStatusCodeMapping(builder =>
+{
+    builder.AddDefaultMappings();
+
+    builder.Map<MyCustomException>(StatusCodes.Status499ClientClosedRequest);
+});
+```
+
+See [Default Mappings](Mapping/StatusCodeMapBuilderExtensions.cs).
+
+---
+
+## Log Level Mapping
+
+You can customize how `CrException` types map to a `LogLevel`.
+
+> [!NOTE]
+> The mapping process traverses the exception type hierarchy.
+
+### Registration
+
+```csharp
+builder.Services.AddCrLogLevelMapping(builder =>
+{
+    builder.AddDefaultMappings();
+
+    builder.Map<MyCustomException>(LogLevel.Warning);
+});
+```
+
+See [Default Mappings](Mapping/LogLevelMapBuilderExtensions.cs).

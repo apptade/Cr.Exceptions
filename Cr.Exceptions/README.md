@@ -1,127 +1,127 @@
 # Intro
 
-A lightweight library for defining application errors, creating typed exceptions, and translating external exceptions into domain-specific exceptions.
-
-This package contains only the core exception model and has no ASP.NET Core dependencies.
-
-## Features
-
-* Typed application exceptions
-* Standard exception categories
-* Structured application errors (`CrError`)
-* Error code → exception mapping (`ExceptionFactory`)
-* Exception → exception translation (`ExceptionTranslator`)
-* No ASP.NET Core dependencies
+A high-performance .NET library to map external error codes into typed exceptions and translate infrastructure failures into domain exceptions.
 
 ---
 
-# Error Model
+## Exception Factory
 
-Every application error is represented by `CrError`.
+**Use Case:** Materialize string-based error codes from external APIs into strongly-typed exceptions.
 
-```csharp
-var error = new CrError(
-    "IdentityUserNotFound",
-    "User was not found.");
-```
-
-Each error contains:
-
-* `Code` — stable identifier intended for clients.
-* `Message` — human-readable error description.
-
----
-
-# Exception Categories
-
-Applications should inherit from one of the predefined exception categories.
-
-Available categories:
-
-| Exception                | Purpose                 |
-| ------------------------ | ----------------------- |
-| `ValidationException`    | Validation failures     |
-| `UnauthorizedException`  | Authentication required |
-| `ForbiddenException`     | Access denied           |
-| `NotFoundException`      | Resource not found      |
-| `ConflictException`      | Resource conflict       |
-| `UnprocessableException` | Business rule violation |
-| `InternalException`      | Internal server error   |
-
-Example:
-
-```csharp
-public sealed class UserNotFoundException : NotFoundException
+```json
 {
-    public UserNotFoundException() 
-        : base([new CrError("IdentityUserNotFound","User was not found.")])
-    {
-    }
+  "error": "invalid_grant"
 }
 ```
 
-Usage:
+### Creating
 
 ```csharp
-throw new UserNotFoundException();
+public sealed class KeycloakInvalidGrantException : ValidationException
+{
+    private static readonly ImmutableArray<CrError> _errors
+        = [new("IdentityInvalidGrant", "The authorization grant is invalid.")];
+
+    public KeycloakInvalidGrantException() : base(_errors) { }
+}
+```
+
+### Registration
+
+```csharp
+var builder = new ExceptionFactoryBuilder()
+    .Map("invalid_grant", static () => new KeycloakInvalidGrantException());
+
+var factory = builder.Build();
+```
+
+### Receiving
+
+```csharp
+throw factory.Create(errorCode); // Throws KeyNotFoundException if no mapping exists.
+```
+
+**Or:**
+
+```csharp
+if (factory.TryCreate(errorCode, out var exception)) throw exception;
 ```
 
 ---
 
-# ExceptionFactory
+## Exception Translator
 
-External APIs often return string error codes.
+**Use Case:** Catch infrastructure failures and translate them into clean domain exceptions.
 
-For example:
+> [!NOTE]
+> The mapping process traverses the exception type hierarchy.
 
-```text
-invalid_grant
-```
-
-`ExceptionFactory` maps those codes to typed exceptions.
-
-Registration:
+### Creating
 
 ```csharp
-ExceptionFactory factory = new ExceptionFactoryBuilder()
-    .Map(
-        "invalid_grant",
-        static () => new InvalidCredentialsException())
-    .Build();
+public sealed class UserInvalidCredentialsException : ValidationException
+{
+    private static readonly ImmutableArray<CrError> _errors = [new("UserInvalidCredentials")];
+
+    public UserInvalidCredentialsException(Exception? innerException = null) : base(_errors, innerException) { }
+}
 ```
 
-Usage:
+### Registration
 
 ```csharp
-throw factory.Create("invalid_grant");
+var builder = new ExceptionTranslatorBuilder()
+    .Map<KeycloakInvalidGrantException>(static ex => new UserInvalidCredentialsException(ex));
+
+var translator = builder.Build();
 ```
 
-This keeps external service contracts isolated from your application.
-
----
-
-# ExceptionTranslator
-
-Infrastructure exceptions are often not suitable for the application layer.
-
-`ExceptionTranslator` converts one exception type into another.
-
-Registration:
+### Receiving
 
 ```csharp
-ExceptionTranslator translator = new ExceptionTranslatorBuilder()
-    .Map<KeycloakUserNotFoundException>(
-        static innerException => new UserNotFoundException(innerException))
-    .Build();
-```
-
-Usage:
-
-```csharp
+try
+{
+    // Your code
+}
 catch (Exception ex)
 {
-    throw translator.Translate(ex);
+    throw translator.Translate(ex); // Throws KeyNotFoundException if no mapping exists.
 }
 ```
 
-This allows infrastructure-specific exceptions to remain inside the infrastructure layer while exposing domain-specific exceptions to the rest of the application.
+**Or:**
+
+```csharp
+try
+{
+    // Your code
+}
+catch (Exception ex)
+{
+    if (translator.TryTranslate(ex, out var translatedException))
+    {
+        throw translatedException;
+    }
+
+    throw;
+}
+```
+
+---
+
+## Core
+
+**Base:** All custom exceptions inherit from the `CrException` class. 
+It carries an `ImmutableArray` of structured error details (zero or more `CrError` instances):
+
+```csharp
+record class CrError(string Code, string? Message = null);
+```
+
+---
+
+## Exception Categories
+
+Inherit from semantic categories depending on the architectural context:
+
+See the [Categories](Categories/) folder for all available built-in exceptions.
