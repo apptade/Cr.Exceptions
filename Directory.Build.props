@@ -1,19 +1,18 @@
 <Project>
 
   <PropertyGroup>
-    <AnalysisLevel>latest</AnalysisLevel>
-    <AnalysisMode>Recommended</AnalysisMode>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
     <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);1591</NoWarn>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
   </PropertyGroup>
 
   <PropertyGroup>
     <Company>apptade</Company>
     <Authors>apptade</Authors>
 
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
 
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
@@ -22,6 +21,7 @@
     <PackageReadmeFile Condition="Exists('README.md')">README.md</PackageReadmeFile>
 
     <NuGetPackagePrefix>CrCore</NuGetPackagePrefix>
+    <PackageId>$(NuGetPackagePrefix)$(MSBuildProjectName.Substring(2))</PackageId>
   </PropertyGroup>
 
   <ItemGroup Condition="Exists('README.md')">

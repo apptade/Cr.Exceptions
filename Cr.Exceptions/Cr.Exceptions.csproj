@@ -9,7 +9,6 @@
 
   <PropertyGroup>
     <Description>Core library for advanced .NET error handling. Provides a unified exception set, an exception factory, and an exception translator.</Description>
-    <PackageId>$(NuGetPackagePrefix).Exceptions</PackageId>
     <PackageTags>exception;exceptions;error-handling;exception-handling;exception-factory;exception-translator;exception-mapping;domain-exceptions;architecture;helpers</PackageTags>
   </PropertyGroup>
 
