@@ -11,8 +11,7 @@ public abstract class MapBuilder<TKey, TValue> where TKey : notnull
 
         if (!_map.TryAdd(key, value))
         {
-            throw new ArgumentException(
-                $"The key '{key}' of type '{key.GetType().FullName}' has already been added.", nameof(key));
+            throw new ArgumentException($"The key '{key}' ({key.GetType().Name}) has already been added to {GetType().Name}.", nameof(key));
         }
     }
 

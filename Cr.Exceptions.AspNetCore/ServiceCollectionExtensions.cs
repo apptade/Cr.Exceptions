@@ -7,7 +7,7 @@ public static class ServiceCollectionExtensions
 {
     extension(IServiceCollection services)
     {
-        public IServiceCollection AddCrExceptions()
+        public IServiceCollection AddCrExceptionHandling()
         {
             return services
                 .AddCrExceptionHandler()
@@ -22,12 +22,9 @@ public static class ServiceCollectionExtensions
                 .AddExceptionHandler<CrExceptionHandler>();
         }
 
-        public IServiceCollection AddCrStatusCodeMapping()
-            => AddCrStatusCodeMapping(services, static builder => builder.AddDefaultMappings());
-
-        public IServiceCollection AddCrStatusCodeMapping(Action<StatusCodeMapBuilder> configurator)
+        public IServiceCollection AddCrStatusCodeMapping(Action<StatusCodeMapBuilder>? configurator = null)
         {
-            ArgumentNullException.ThrowIfNull(configurator);
+            configurator ??= static builder => builder.AddDefaultMappings();
 
             var builder = new StatusCodeMapBuilder();
             configurator(builder);
@@ -35,12 +32,9 @@ public static class ServiceCollectionExtensions
             return services.AddSingleton(builder.Build());
         }
 
-        public IServiceCollection AddCrLogLevelMapping()
-            => AddCrLogLevelMapping(services, static builder => builder.AddDefaultMappings());
-
-        public IServiceCollection AddCrLogLevelMapping(Action<LogLevelMapBuilder> configurator)
+        public IServiceCollection AddCrLogLevelMapping(Action<LogLevelMapBuilder>? configurator = null)
         {
-            ArgumentNullException.ThrowIfNull(configurator);
+            configurator ??= static builder => builder.AddDefaultMappings();
 
             var builder = new LogLevelMapBuilder();
             configurator(builder);

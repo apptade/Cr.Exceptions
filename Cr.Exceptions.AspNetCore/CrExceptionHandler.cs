@@ -7,12 +7,10 @@ namespace Cr.Exceptions.AspNetCore;
 
 public sealed class CrExceptionHandler : IExceptionHandler
 {
-    private static readonly ImmutableArray<CrError> DefaultInternalErrors
-        = [new("InternalError", "An unexpected internal error occurred.")];
+    private static readonly ImmutableArray<CrError> DefaultInternalErrors = [new("InternalError", "An unexpected internal error occurred.")];
 
     private readonly IProblemDetailsService _problemDetailsService;
     private readonly ILogger<CrExceptionHandler> _logger;
-
     private readonly StatusCodeMap _statusCodeMap;
     private readonly LogLevelMap _logLevelMap;
 
@@ -24,17 +22,16 @@ public sealed class CrExceptionHandler : IExceptionHandler
     {
         _problemDetailsService = problemDetailsService;
         _logger = logger;
-
         _statusCodeMap = statusCodeMap;
         _logLevelMap = logLevelMap;
     }
 
-    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         if (httpContext.Response.HasStarted)
         {
             _logger.LogResponseAlreadyStarted(exception);
-            return false;
+            return ValueTask.FromResult(false);
         }
 
         var errors = DefaultInternalErrors;
@@ -78,9 +75,9 @@ public sealed class CrExceptionHandler : IExceptionHandler
             ProblemDetails = { Status = statusCode, },
         };
 
-        AddProblemDetailsExtension(problemDetailsContext.ProblemDetails, ProblemDetailsExtensionNames.Errors, errors);
+        if (!errors.IsDefaultOrEmpty) AddProblemDetailsExtension(problemDetailsContext.ProblemDetails, ProblemDetailsExtensionNames.Errors, errors);
 
-        return await TryWriteResponseAsync(exception, problemDetailsContext);
+        return TryWriteResponseAsync(exception, problemDetailsContext);
     }
 
     private void AddProblemDetailsExtension(ProblemDetails problemDetails, string key, object? value)
@@ -92,7 +89,7 @@ public sealed class CrExceptionHandler : IExceptionHandler
         }
     }
 
-    private async Task<bool> TryWriteResponseAsync(Exception exception, ProblemDetailsContext problemDetailsContext)
+    private async ValueTask<bool> TryWriteResponseAsync(Exception exception, ProblemDetailsContext problemDetailsContext)
     {
         var isWritten = await _problemDetailsService.TryWriteAsync(problemDetailsContext);
 

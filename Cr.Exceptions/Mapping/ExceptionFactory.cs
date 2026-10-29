@@ -4,7 +4,7 @@ namespace Cr.Exceptions;
 
 public class ExceptionFactory : Map<string, Func<CrException>>
 {
-    internal ExceptionFactory(FrozenDictionary<string, Func<CrException>> dictionary) : base(dictionary) { }
+    internal ExceptionFactory(FrozenDictionary<string, Func<CrException>> frozenDictionary) : base(frozenDictionary) { }
 
     public CrException Create(string code)
         => ExecuteFactory(GetValue(code));
@@ -14,6 +14,6 @@ public class ExceptionFactory : Map<string, Func<CrException>>
 
     private static CrException ExecuteFactory(Func<CrException> factory)
     {
-        return factory() ?? throw new InvalidOperationException($"{nameof(factory)} returned null.");
+        return factory() ?? throw new InvalidOperationException($"The exception factory '{factory.Method}' returned null.");
     }
 }

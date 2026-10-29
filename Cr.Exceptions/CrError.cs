@@ -2,9 +2,6 @@
 
 public record class CrError
 {
-    public string Code { get; }
-    public string? Message { get; }
-
     public CrError(string code, string? message = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(code);
@@ -12,4 +9,7 @@ public record class CrError
         Code = code;
         Message = message;
     }
+
+    public string Code { get; }
+    public string? Message { get; }
 }

@@ -5,6 +5,7 @@ public class ExceptionTranslatorBuilder : MapBuilder<Type, Func<Exception, CrExc
     public ExceptionTranslatorBuilder Map<TException>(Func<Exception, CrException> translator) where TException : Exception
     {
         AddPair(typeof(TException), translator);
+
         return this;
     }
 
